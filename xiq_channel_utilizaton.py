@@ -36,8 +36,8 @@ def runDisplay(x,device_id):
     ts = time.time()
     endTime = int(ts*1000)
     startTime = endTime - 30000
-    count = 60
-    print(f"Collecting the last {str((endTime-startTime)/1000)} mins of radio data... ",end='')
+    count = 40
+    print(f"Collecting the last {str((endTime-startTime)/1000*count/60)} mins of radio data... ",end='')
     while count > 0:
         p = multiprocessing.Process(target=collectRadio,args=(x, device_id, startTime, endTime, mp_queue))
         processes.append(p)
