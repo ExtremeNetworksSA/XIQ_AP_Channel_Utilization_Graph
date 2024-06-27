@@ -10,7 +10,10 @@ The script will prompt for you XIQ credentials.
 ### Collecting the device
 The script will prompt for the name of the device after authentication with XIQ is preformed.
 >You can also manually enter the name of the device on line 25.
-
+### Getting Start Time
+The script will prompt for the time to start. The script will collect 4 hours of utilization in 10 minute increments. So the start time will need to be prior to the last 4 hours. You must enter the time in the following format.
+```%m/%d/%y %H:%M```
+here is an example: 06/24/24 13:00
 ## Needed Files
 This script uses other files. If these files are missing the script will not function. 
 In the same folder as the script, there should be an /app/ folder. Inside of this folder there should be a xiq_logger.py file and a xiq_api.py file.

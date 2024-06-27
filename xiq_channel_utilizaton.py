@@ -26,24 +26,23 @@ ap_name = ''
 
 def collectRadio(xiq, device_id, startTime, endTime, mp_queue):
     data = xiq.collectRadioInfo(device_id, startTime, endTime)
-    mp_queue.put(data)
+    if data:
+        mp_queue.put(data)
 
 
-def runDisplay(x,device_id):
+def runDisplay(x,device_id,startTime):
     captured_data = []
     mp_queue = multiprocessing.Queue()
     processes = []
-    ts = time.time()
-    endTime = int(ts*1000)
-    startTime = endTime - 30000
-    count = 40
-    print(f"Collecting the last {str((endTime-startTime)/1000*count/60)} mins of radio data... ",end='')
+    endTime = startTime + 600000
+    count = 24
+    print(f"Collecting {str((endTime-startTime)/1000*count/60/60)} hours of radio data in 10 min increments... ",end='')
     while count > 0:
         p = multiprocessing.Process(target=collectRadio,args=(x, device_id, startTime, endTime, mp_queue))
         processes.append(p)
         p.start()
-        startTime = startTime - 30000
-        endTime = endTime - 30000
+        startTime = startTime + 600000
+        endTime = endTime + 600000
         count -= 1
     for p in processes:
         try:
@@ -55,7 +54,7 @@ def runDisplay(x,device_id):
     for data in iter(mp_queue.get, 'STOP'):
         captured_data = captured_data + data
     df = pd.DataFrame(captured_data) 
-    df = df.sort_values(by='timestamp') 
+    df = df.sort_values(by='timestamp')
     print("Completed")
     return df
     
@@ -88,7 +87,27 @@ def main():
         logger.warning(f"AP {ap_name} was not found!")
         print()
     else:
-        df = runDisplay(x=x,device_id=device[0]['id'])
+        # Get start Time from User
+        valid_input = False
+        while not valid_input:
+            print("Please enter a Start time in the following format. '%m/%d/%y %H:%M' ")
+            startTime = input("Entered Time must be greater than 4 hours ago: ")
+            try:
+                startTime = time.strptime(startTime,'%m/%d/%y %H:%M')
+            except ValueError as e:
+                print(e)
+            else:
+                startTime = int(time.mktime(startTime)*1000)
+                ts = time.time()
+                currentTime = int(ts*1000)
+                validTime = currentTime-14400000 # 14400000 is 4 hours ago
+                if currentTime > startTime > validTime:
+                    print("The time entered is within the last 4 hours. Please enter an older time\n")
+                elif startTime > currentTime:
+                    print("You entered a time in the future! We can not time travel :)\n")
+                else:
+                    valid_input = True
+        df = runDisplay(x=x,device_id=device[0]['id'],startTime=startTime)
         df['timestamp'] = df['timestamp'].map(lambda x : pd.Timestamp(x, unit='ms'))
         fig = px.line(
             df,
